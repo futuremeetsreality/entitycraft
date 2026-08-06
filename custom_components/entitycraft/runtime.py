@@ -14,9 +14,11 @@ from .const import (
     CONF_DELAY,
     CONF_ENTITIES,
     CONF_LOGIC,
+    CONF_RESET_ACTION,
     CONF_RESET_DELAY,
-    CONF_RESET_SCENE,
-    CONF_TRIGGER_SCENE,
+    CONF_RESET_TARGET,
+    CONF_TRIGGER_ACTION,
+    CONF_TRIGGER_TARGET,
     LOGIC_ALL,
 )
 
@@ -116,14 +118,20 @@ class EntityCraftRule:
 
     async def _apply_state(self, active: bool) -> None:
         self.is_active = active
-        scene = (
-            self.entry.data[CONF_TRIGGER_SCENE]
-            if active
-            else self.entry.data[CONF_RESET_SCENE]
-        )
+        target = self.entry.data[
+            CONF_TRIGGER_TARGET if active else CONF_RESET_TARGET
+        ]
+        action = self.entry.data[
+            CONF_TRIGGER_ACTION if active else CONF_RESET_ACTION
+        ]
         self.status = "active" if active else "ready"
+
         await self.hass.services.async_call(
-            "scene", "turn_on", {"entity_id": scene}, blocking=True
+            "homeassistant",
+            action,
+            {},
+            target=target,
+            blocking=True,
         )
         self._notify()
 
