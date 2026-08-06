@@ -31,8 +31,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload after changes made with the Configure button."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up one EntityCraft rule from a config entry."""
+    entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
     rule = EntityCraftRule(hass, entry)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = rule
     await rule.async_start()
