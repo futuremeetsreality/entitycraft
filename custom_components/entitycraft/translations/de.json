@@ -3,12 +3,23 @@
   "config": {
     "step": {
       "user": {
-        "title": "EntityCraft einrichten",
-        "description": "Erstellt die lokale EntityCraft-Regel-Engine. Regeln werden vollständig über die Home-Assistant-Oberfläche konfiguriert."
+        "title": "Neue EntityCraft-Regel",
+        "description": "Erstelle eine Regel für Binärsensoren mit Szene bei Auslösung und Rücksetzung.",
+        "data": {
+          "name": "Regelname",
+          "entities": "Überwachte Sensoren",
+          "logic": "Verknüpfung",
+          "active_state": "Auslösezustand",
+          "delay": "Auslöseverzögerung",
+          "trigger_scene": "Szene bei Auslösung",
+          "reset_delay": "Rücksetzverzögerung",
+          "reset_scene": "Szene bei Rücksetzung"
+        }
       }
-    },
-    "abort": {
-      "single_instance_allowed": "EntityCraft ist bereits eingerichtet."
     }
+  },
+  "selector": {
+    "logic": {"options": {"any": "Mindestens einer", "all": "Alle"}},
+    "active_state": {"options": {"on": "Aktiv / offen", "off": "Inaktiv / geschlossen"}}
   }
 }
