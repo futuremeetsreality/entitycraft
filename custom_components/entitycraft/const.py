@@ -16,6 +16,7 @@ CONF_RESET_ACTION = "reset_action"
 ACTION_TURN_ON = "turn_on"
 ACTION_TURN_OFF = "turn_off"
 ACTION_TOGGLE = "toggle"
+ACTION_RESTORE_PREVIOUS = "restore_previous"
 
 LOGIC_ANY = "any"
 LOGIC_ALL = "all"
