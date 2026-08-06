@@ -4,7 +4,23 @@
     "step": {
       "user": {
         "title": "Neue EntityCraft-Regel",
-        "description": "Erstelle eine Regel für Binärsensoren mit frei wählbaren Zielen und Aktionen."
+        "description": "Erstelle eine Regel für Binärsensoren mit frei wählbaren Zielen und Aktionen.",
+        "data": {
+          "name": "Regelname",
+          "entities": "Überwachte Sensoren",
+          "logic": "Verknüpfung",
+          "active_state": "Auslösezustand",
+          "delay": "Auslöseverzögerung",
+          "trigger_target": "Ziel bei Auslösung",
+          "trigger_action": "Aktion bei Auslösung",
+          "snapshot_entities": "Zustand sichern von",
+          "reset_delay": "Rücksetzverzögerung",
+          "reset_target": "Ziel bei Rücksetzung",
+          "reset_action": "Aktion bei Rücksetzung"
+        },
+        "data_description": {
+          "snapshot_entities": "Wähle hier die Lampen oder Entitäten, deren Zustand vor einer Szene gespeichert und später wiederhergestellt werden soll."
+        }
       },
       "reconfigure": {
         "title": "EntityCraft-Regel bearbeiten",
@@ -17,7 +33,23 @@
     "step": {
       "init": {
         "title": "EntityCraft-Regel konfigurieren",
-        "description": "Ändere die Regel vollständig über die Benutzeroberfläche."
+        "description": "Ändere die Regel vollständig über die Benutzeroberfläche.",
+        "data": {
+          "name": "Regelname",
+          "entities": "Überwachte Sensoren",
+          "logic": "Verknüpfung",
+          "active_state": "Auslösezustand",
+          "delay": "Auslöseverzögerung",
+          "trigger_target": "Ziel bei Auslösung",
+          "trigger_action": "Aktion bei Auslösung",
+          "snapshot_entities": "Zustand sichern von",
+          "reset_delay": "Rücksetzverzögerung",
+          "reset_target": "Ziel bei Rücksetzung",
+          "reset_action": "Aktion bei Rücksetzung"
+        },
+        "data_description": {
+          "snapshot_entities": "Bei einer Szene die tatsächlich veränderten Lampen auswählen."
+        }
       }
     }
   },
