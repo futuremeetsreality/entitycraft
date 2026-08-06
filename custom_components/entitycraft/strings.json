@@ -3,12 +3,37 @@
   "config": {
     "step": {
       "user": {
-        "title": "Set up EntityCraft",
-        "description": "Create the local EntityCraft rule engine. Rules will be configured through the Home Assistant UI."
+        "title": "Create EntityCraft rule",
+        "description": "Create a binary sensor rule with configurable Home Assistant targets and actions."
+      },
+      "reconfigure": {
+        "title": "Edit EntityCraft rule",
+        "description": "Change sensors, logic, delays, targets and actions."
       }
     },
     "abort": {
-      "single_instance_allowed": "EntityCraft is already configured."
+      "reconfigure_successful": "The rule was updated successfully."
+    }
+  },
+  "selector": {
+    "logic": {
+      "options": {
+        "any": "At least one",
+        "all": "All"
+      }
+    },
+    "active_state": {
+      "options": {
+        "on": "Active / open",
+        "off": "Inactive / closed"
+      }
+    },
+    "action": {
+      "options": {
+        "turn_on": "Turn on / activate",
+        "turn_off": "Turn off",
+        "toggle": "Toggle"
+      }
     }
   }
 }

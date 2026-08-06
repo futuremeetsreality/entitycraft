@@ -10,61 +10,114 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 
 from .const import (
+    ACTION_TOGGLE,
+    ACTION_TURN_OFF,
+    ACTION_TURN_ON,
     CONF_ACTIVE_STATE,
     CONF_DELAY,
     CONF_ENTITIES,
     CONF_LOGIC,
+    CONF_RESET_ACTION,
     CONF_RESET_DELAY,
-    CONF_RESET_SCENE,
-    CONF_TRIGGER_SCENE,
+    CONF_RESET_TARGET,
+    CONF_TRIGGER_ACTION,
+    CONF_TRIGGER_TARGET,
     DOMAIN,
     LOGIC_ALL,
     LOGIC_ANY,
 )
 
 
+def _schema(defaults: dict | None = None) -> vol.Schema:
+    """Build the rule form schema."""
+    defaults = defaults or {}
+    action_options = [ACTION_TURN_ON, ACTION_TURN_OFF, ACTION_TOGGLE]
+    return vol.Schema(
+        {
+            vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "")): str,
+            vol.Required(CONF_ENTITIES, default=defaults.get(CONF_ENTITIES, [])): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+            ),
+            vol.Required(CONF_LOGIC, default=defaults.get(CONF_LOGIC, LOGIC_ANY)): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[LOGIC_ANY, LOGIC_ALL],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key="logic",
+                )
+            ),
+            vol.Required(
+                CONF_ACTIVE_STATE, default=defaults.get(CONF_ACTIVE_STATE, "on")
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=["on", "off"],
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key="active_state",
+                )
+            ),
+            vol.Required(CONF_DELAY, default=defaults.get(CONF_DELAY, 0)): selector.NumberSelector(
+                selector.NumberSelectorConfig(min=0, max=3600, step=1, unit_of_measurement="s")
+            ),
+            vol.Required(
+                CONF_TRIGGER_TARGET, default=defaults.get(CONF_TRIGGER_TARGET, {})
+            ): selector.TargetSelector(),
+            vol.Required(
+                CONF_TRIGGER_ACTION, default=defaults.get(CONF_TRIGGER_ACTION, ACTION_TURN_ON)
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=action_options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key="action",
+                )
+            ),
+            vol.Required(
+                CONF_RESET_DELAY, default=defaults.get(CONF_RESET_DELAY, 0)
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(min=0, max=3600, step=1, unit_of_measurement="s")
+            ),
+            vol.Required(
+                CONF_RESET_TARGET, default=defaults.get(CONF_RESET_TARGET, {})
+            ): selector.TargetSelector(),
+            vol.Required(
+                CONF_RESET_ACTION, default=defaults.get(CONF_RESET_ACTION, ACTION_TURN_OFF)
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=action_options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key="action",
+                )
+            ),
+        }
+    )
+
+
 class EntityCraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Create one EntityCraft rule per config entry."""
 
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """Create a binary-sensor rule."""
         if user_input is not None:
             return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
 
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_NAME): str,
-                vol.Required(CONF_ENTITIES): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
-                ),
-                vol.Required(CONF_LOGIC, default=LOGIC_ANY): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=[LOGIC_ANY, LOGIC_ALL],
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        translation_key="logic",
-                    )
-                ),
-                vol.Required(CONF_ACTIVE_STATE, default="on"): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=["on", "off"],
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                        translation_key="active_state",
-                    )
-                ),
-                vol.Required(CONF_DELAY, default=0): selector.NumberSelector(
-                    selector.NumberSelectorConfig(min=0, max=3600, step=1, unit_of_measurement="s")
-                ),
-                vol.Required(CONF_TRIGGER_SCENE): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="scene")
-                ),
-                vol.Required(CONF_RESET_DELAY, default=0): selector.NumberSelector(
-                    selector.NumberSelectorConfig(min=0, max=3600, step=1, unit_of_measurement="s")
-                ),
-                vol.Required(CONF_RESET_SCENE): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="scene")
-                ),
-            }
+        return self.async_show_form(step_id="user", data_schema=_schema())
+
+    async def async_step_reconfigure(self, user_input: dict | None = None) -> FlowResult:
+        """Edit an existing rule."""
+        entry = self._get_reconfigure_entry()
+
+        if user_input is not None:
+            self.hass.config_entries.async_update_entry(
+                entry,
+                title=user_input[CONF_NAME],
+                data=user_input,
+            )
+            await self.hass.config_entries.async_reload(entry.entry_id)
+            return self.async_abort(reason="reconfigure_successful")
+
+        defaults = dict(entry.data)
+        defaults[CONF_NAME] = entry.title
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=_schema(defaults),
         )
-        return self.async_show_form(step_id="user", data_schema=schema)

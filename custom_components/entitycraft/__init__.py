@@ -3,8 +3,32 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, PLATFORMS
+from .const import (
+    ACTION_TURN_ON,
+    CONF_RESET_ACTION,
+    CONF_RESET_TARGET,
+    CONF_TRIGGER_ACTION,
+    CONF_TRIGGER_TARGET,
+    DOMAIN,
+    PLATFORMS,
+)
 from .runtime import EntityCraftRule
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate older scene-only rules to generic action targets."""
+    if entry.version == 1:
+        data = dict(entry.data)
+        trigger_scene = data.pop("trigger_scene", None)
+        reset_scene = data.pop("reset_scene", None)
+        if trigger_scene:
+            data[CONF_TRIGGER_TARGET] = {"entity_id": trigger_scene}
+            data[CONF_TRIGGER_ACTION] = ACTION_TURN_ON
+        if reset_scene:
+            data[CONF_RESET_TARGET] = {"entity_id": reset_scene}
+            data[CONF_RESET_ACTION] = ACTION_TURN_ON
+        hass.config_entries.async_update_entry(entry, data=data, version=2)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
