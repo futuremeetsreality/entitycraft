@@ -1,0 +1,14 @@
+{
+  "title": "EntityCraft",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up EntityCraft",
+        "description": "Create the local EntityCraft rule engine. Rules will be configured through the Home Assistant UI."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "EntityCraft is already configured."
+    }
+  }
+}
