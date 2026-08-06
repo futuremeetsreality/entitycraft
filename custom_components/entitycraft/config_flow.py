@@ -21,6 +21,7 @@ from .const import (
     CONF_RESET_ACTION,
     CONF_RESET_DELAY,
     CONF_RESET_TARGET,
+    CONF_SNAPSHOT_ENTITIES,
     CONF_TRIGGER_ACTION,
     CONF_TRIGGER_TARGET,
     DOMAIN,
@@ -33,12 +34,7 @@ def _schema(defaults: dict | None = None) -> vol.Schema:
     """Build the rule form schema."""
     defaults = defaults or {}
     trigger_actions = [ACTION_TURN_ON, ACTION_TURN_OFF, ACTION_TOGGLE]
-    reset_actions = [
-        ACTION_RESTORE_PREVIOUS,
-        ACTION_TURN_ON,
-        ACTION_TURN_OFF,
-        ACTION_TOGGLE,
-    ]
+    reset_actions = [ACTION_RESTORE_PREVIOUS, ACTION_TURN_ON, ACTION_TURN_OFF, ACTION_TOGGLE]
     return vol.Schema(
         {
             vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "")): str,
@@ -58,6 +54,9 @@ def _schema(defaults: dict | None = None) -> vol.Schema:
             vol.Required(CONF_TRIGGER_ACTION, default=defaults.get(CONF_TRIGGER_ACTION, ACTION_TURN_ON)): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=trigger_actions, mode=selector.SelectSelectorMode.DROPDOWN, translation_key="action")
             ),
+            vol.Optional(CONF_SNAPSHOT_ENTITIES, default=defaults.get(CONF_SNAPSHOT_ENTITIES, [])): selector.EntitySelector(
+                selector.EntitySelectorConfig(multiple=True)
+            ),
             vol.Required(CONF_RESET_DELAY, default=defaults.get(CONF_RESET_DELAY, 0)): selector.NumberSelector(
                 selector.NumberSelectorConfig(min=0, max=3600, step=1, unit_of_measurement="s")
             ),
@@ -72,11 +71,10 @@ def _schema(defaults: dict | None = None) -> vol.Schema:
 class EntityCraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Create one EntityCraft rule per config entry."""
 
-    VERSION = 2
+    VERSION = 3
 
     @staticmethod
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
-        """Return the options flow used by the visible Configure button."""
         return EntityCraftOptionsFlow(config_entry)
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
