@@ -1,0 +1,14 @@
+{
+  "title": "EntityCraft",
+  "config": {
+    "step": {
+      "user": {
+        "title": "EntityCraft einrichten",
+        "description": "Erstellt die lokale EntityCraft-Regel-Engine. Regeln werden vollständig über die Home-Assistant-Oberfläche konfiguriert."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "EntityCraft ist bereits eingerichtet."
+    }
+  }
+}
