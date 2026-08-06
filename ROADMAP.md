@@ -1,39 +1,33 @@
-# Roadmap
+# EntityCraft Roadmap
 
-## 0.1 Foundation
+## Alpha 0.1 — Controller replacement
 
-- Home Assistant integration skeleton
-- UI config flow
-- German and English localization
-- architecture and portable rule package
-- HACS metadata
+- [x] Installable custom integration
+- [x] Rule creation through the Home Assistant UI
+- [x] Multiple binary sensors
+- [x] ANY / ALL logic
+- [x] Trigger state selection
+- [x] Trigger and reset delays
+- [x] Trigger scene and reset scene
+- [x] Rule enable switch
+- [x] Live alarm and status entities
+- [ ] Reconfigure an existing rule through the UI
+- [ ] Automated tests and Hassfest validation
+- [ ] First installation test on a real Home Assistant instance
 
-## 0.2 Rule model
+## Alpha 0.2
 
-- create, edit, enable and disable rules through UI
-- abstract inputs and local bindings
-- binary sensor conditions
-- AND / OR evaluation
+- Multiple actions
+- Direct light, switch and script actions
+- Improved live explanation
 
-## 0.3 Runtime
+## Alpha 0.3
 
-- trigger and reset delays
-- light, switch, scene and script actions
-- cancellation-safe state machine
-- per-rule status entities
+- Numeric sensors and comparison operators
 
-## 0.4 Explainable UI
+## Later
 
-- live read-only evaluation
-- clear reason for every condition result
-- pending-delay countdown
-- rule-specific history
-
-## 1.0
-
-- complete UI-only door and sensor monitoring workflow
-- portable import/export format
-- stable migrations and tests
-- initial documentation and HACS release
-
-The marketplace service is planned after 1.0, but the 1.0 rule format is designed for it from the beginning.
+- Portable import and export
+- Marketplace
+- Rule templates and version migrations
+- Dedicated visual rule editor
