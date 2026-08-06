@@ -1,0 +1,25 @@
+{
+  "title": "EntityCraft",
+  "config": {
+    "step": {
+      "user": {
+        "title": "New EntityCraft rule",
+        "description": "Create a binary-sensor rule with trigger and reset scenes.",
+        "data": {
+          "name": "Rule name",
+          "entities": "Monitored sensors",
+          "logic": "Logic",
+          "active_state": "Trigger state",
+          "delay": "Trigger delay",
+          "trigger_scene": "Scene on trigger",
+          "reset_delay": "Reset delay",
+          "reset_scene": "Scene on reset"
+        }
+      }
+    }
+  },
+  "selector": {
+    "logic": {"options": {"any": "At least one", "all": "All"}},
+    "active_state": {"options": {"on": "Active / open", "off": "Inactive / closed"}}
+  }
+}
