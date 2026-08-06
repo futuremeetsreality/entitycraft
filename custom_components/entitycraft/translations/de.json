@@ -4,50 +4,26 @@
     "step": {
       "user": {
         "title": "Neue EntityCraft-Regel",
-        "description": "Erstelle eine Regel für Binärsensoren mit frei wählbaren Zielen und Aktionen.",
-        "data": {
-          "name": "Regelname",
-          "entities": "Überwachte Sensoren",
-          "logic": "Verknüpfung",
-          "active_state": "Auslösezustand",
-          "delay": "Auslöseverzögerung",
-          "trigger_target": "Ziel bei Auslösung",
-          "trigger_action": "Aktion bei Auslösung",
-          "reset_delay": "Rücksetzverzögerung",
-          "reset_target": "Ziel bei Rücksetzung",
-          "reset_action": "Aktion bei Rücksetzung"
-        }
+        "description": "Erstelle eine Regel für Binärsensoren mit frei wählbaren Zielen und Aktionen."
       },
       "reconfigure": {
         "title": "EntityCraft-Regel bearbeiten",
-        "description": "Ändere Sensoren, Logik, Verzögerungen, Ziele und Aktionen.",
-        "data": {
-          "name": "Regelname",
-          "entities": "Überwachte Sensoren",
-          "logic": "Verknüpfung",
-          "active_state": "Auslösezustand",
-          "delay": "Auslöseverzögerung",
-          "trigger_target": "Ziel bei Auslösung",
-          "trigger_action": "Aktion bei Auslösung",
-          "reset_delay": "Rücksetzverzögerung",
-          "reset_target": "Ziel bei Rücksetzung",
-          "reset_action": "Aktion bei Rücksetzung"
-        }
+        "description": "Ändere Sensoren, Logik, Verzögerungen, Ziele und Aktionen."
       }
     },
-    "abort": {
-      "reconfigure_successful": "Die Regel wurde erfolgreich aktualisiert."
+    "abort": {"reconfigure_successful": "Die Regel wurde erfolgreich aktualisiert."}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "EntityCraft-Regel konfigurieren",
+        "description": "Ändere die Regel vollständig über die Benutzeroberfläche."
+      }
     }
   },
   "selector": {
     "logic": {"options": {"any": "Mindestens einer", "all": "Alle"}},
     "active_state": {"options": {"on": "Aktiv / offen", "off": "Inaktiv / geschlossen"}},
-    "action": {
-      "options": {
-        "turn_on": "Einschalten / aktivieren",
-        "turn_off": "Ausschalten",
-        "toggle": "Umschalten"
-      }
-    }
+    "action": {"options": {"turn_on": "Einschalten / aktivieren", "turn_off": "Ausschalten", "toggle": "Umschalten", "restore_previous": "Vorherigen Zustand wiederherstellen"}}
   }
 }
