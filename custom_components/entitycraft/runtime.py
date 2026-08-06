@@ -18,6 +18,7 @@ from .const import (
     CONF_RESET_ACTION,
     CONF_RESET_DELAY,
     CONF_RESET_TARGET,
+    CONF_SNAPSHOT_ENTITIES,
     CONF_TRIGGER_ACTION,
     CONF_TRIGGER_TARGET,
     LOGIC_ALL,
@@ -41,18 +42,15 @@ class EntityCraftRule:
 
     @property
     def config(self) -> dict:
-        """Return effective configuration, with UI options overriding data."""
         return {**self.entry.data, **self.entry.options}
 
     async def async_start(self) -> None:
-        """Start listening for entity changes."""
         self._remove_listener = async_track_state_change_event(
             self.hass, self.config[CONF_ENTITIES], self._handle_state_change
         )
         await self.async_evaluate()
 
     async def async_stop(self) -> None:
-        """Stop the rule."""
         if self._remove_listener:
             self._remove_listener()
         self._cancel_delay()
@@ -86,7 +84,6 @@ class EntityCraftRule:
         return all(results) if config[CONF_LOGIC] == LOGIC_ALL else any(results)
 
     async def async_evaluate(self) -> None:
-        """Evaluate current states and transition if necessary."""
         if not self.enabled:
             self.status = "disabled"
             self._cancel_delay()
@@ -128,39 +125,50 @@ class EntityCraftRule:
             return [value]
         return list(value)
 
+    def _snapshot_entity_ids(self) -> list[str]:
+        config = self.config
+        explicit = config.get(CONF_SNAPSHOT_ENTITIES, [])
+        if isinstance(explicit, str):
+            explicit = [explicit]
+        if explicit:
+            return list(explicit)
+
+        return [
+            entity_id
+            for entity_id in self._target_entity_ids(config[CONF_TRIGGER_TARGET])
+            if not entity_id.startswith("scene.")
+        ]
+
     async def _apply_state(self, active: bool) -> None:
         config = self.config
         self.is_active = active
         self.status = "active" if active else "ready"
 
         if active:
-            target = config[CONF_TRIGGER_TARGET]
-            entity_ids = self._target_entity_ids(target)
+            entity_ids = self._snapshot_entity_ids()
             if entity_ids:
                 await self.hass.services.async_call(
                     "scene",
                     "create",
-                    {
-                        "scene_id": self._snapshot_scene,
-                        "snapshot_entities": entity_ids,
-                    },
+                    {"scene_id": self._snapshot_scene, "snapshot_entities": entity_ids},
                     blocking=True,
                 )
             await self.hass.services.async_call(
                 "homeassistant",
                 config[CONF_TRIGGER_ACTION],
                 {},
-                target=target,
+                target=config[CONF_TRIGGER_TARGET],
                 blocking=True,
             )
         elif config[CONF_RESET_ACTION] == ACTION_RESTORE_PREVIOUS:
-            await self.hass.services.async_call(
-                "scene",
-                "turn_on",
-                {},
-                target={"entity_id": f"scene.{self._snapshot_scene}"},
-                blocking=True,
-            )
+            if self.hass.states.get(f"scene.{self._snapshot_scene}") is not None:
+                await self.hass.services.async_call(
+                    "scene",
+                    "turn_on",
+                    {},
+                    target={"entity_id": f"scene.{self._snapshot_scene}"},
+                    blocking=True,
+                )
         else:
             await self.hass.services.async_call(
                 "homeassistant",
