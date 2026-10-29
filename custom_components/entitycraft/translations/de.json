@@ -16,18 +16,44 @@
           "snapshot_entities": "Zustand sichern von",
           "reset_delay": "Rücksetzverzögerung",
           "reset_target": "Ziel bei Rücksetzung",
-          "reset_action": "Aktion bei Rücksetzung"
+          "reset_action": "Aktion bei Rücksetzung",
+          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren"
         },
         "data_description": {
-          "snapshot_entities": "Wähle hier die Lampen oder Entitäten, deren Zustand vor einer Szene gespeichert und später wiederhergestellt werden soll."
+          "snapshot_entities": "Wähle hier die Lampen oder Entitäten, deren Zustand vor einer Szene gespeichert und später wiederhergestellt werden soll.",
+          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen."
         }
       },
       "reconfigure": {
         "title": "EntityCraft-Regel bearbeiten",
-        "description": "Ändere Sensoren, Logik, Verzögerungen, Ziele und Aktionen."
+        "description": "Ändere Sensoren, Logik, Verzögerungen, Ziele und Aktionen.",
+        "data": {
+          "name": "Regelname",
+          "entities": "Überwachte Sensoren",
+          "logic": "Verknüpfung",
+          "active_state": "Auslösezustand",
+          "delay": "Auslöseverzögerung",
+          "trigger_target": "Ziel bei Auslösung",
+          "trigger_action": "Aktion bei Auslösung",
+          "snapshot_entities": "Zustand sichern von",
+          "reset_delay": "Rücksetzverzögerung",
+          "reset_target": "Ziel bei Rücksetzung",
+          "reset_action": "Aktion bei Rücksetzung",
+          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren"
+        },
+        "data_description": {
+          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen."
+        }
       }
     },
-    "abort": {"reconfigure_successful": "Die Regel wurde erfolgreich aktualisiert."}
+    "abort": {
+      "reconfigure_successful": "Die Regel wurde erfolgreich aktualisiert."
+    },
+    "error": {
+      "no_sensors": "Wähle mindestens einen zu überwachenden Sensor aus.",
+      "no_snapshot_entities": "Wähle die tatsächlich veränderten Lampen oder Entitäten aus, nicht eine Szene.",
+      "alarm_active": "Warte das Ende des aktiven Alarms ab, bevor du Sensoren, Ziele oder Aktionen änderst."
+    }
   },
   "options": {
     "step": {
@@ -45,17 +71,47 @@
           "snapshot_entities": "Zustand sichern von",
           "reset_delay": "Rücksetzverzögerung",
           "reset_target": "Ziel bei Rücksetzung",
-          "reset_action": "Aktion bei Rücksetzung"
+          "reset_action": "Aktion bei Rücksetzung",
+          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren"
         },
         "data_description": {
-          "snapshot_entities": "Bei einer Szene die tatsächlich veränderten Lampen auswählen."
+          "snapshot_entities": "Bei einer Szene die tatsächlich veränderten Lampen auswählen.",
+          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen."
         }
       }
+    },
+    "error": {
+      "no_sensors": "Wähle mindestens einen zu überwachenden Sensor aus.",
+      "no_snapshot_entities": "Wähle die tatsächlich veränderten Lampen oder Entitäten aus, nicht eine Szene.",
+      "alarm_active": "Warte das Ende des aktiven Alarms ab, bevor du Sensoren, Ziele oder Aktionen änderst."
     }
   },
   "selector": {
-    "logic": {"options": {"any": "Mindestens einer", "all": "Alle"}},
-    "active_state": {"options": {"on": "Aktiv / offen", "off": "Inaktiv / geschlossen"}},
-    "action": {"options": {"turn_on": "Einschalten / aktivieren", "turn_off": "Ausschalten", "toggle": "Umschalten", "restore_previous": "Vorherigen Zustand wiederherstellen"}}
+    "logic": {
+      "options": {
+        "any": "Mindestens einer",
+        "all": "Alle"
+      }
+    },
+    "active_state": {
+      "options": {
+        "on": "Aktiv / offen",
+        "off": "Inaktiv / geschlossen"
+      }
+    },
+    "action": {
+      "options": {
+        "turn_on": "Einschalten / aktivieren",
+        "turn_off": "Ausschalten",
+        "toggle": "Umschalten",
+        "restore_previous": "Vorherigen Zustand wiederherstellen"
+      }
+    },
+    "unavailable_policy": {
+      "options": {
+        "hold": "Letzten Alarmzustand beibehalten",
+        "activate": "Alarm auslösen (vorsichtig)"
+      }
+    }
   }
 }

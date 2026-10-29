@@ -35,4 +35,9 @@ class EntityCraftStatusSensor(SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        return {"matched_entities": self.rule.matched_entities, "enabled": self.rule.enabled}
+        return {
+            "matched_entities": self.rule.matched_entities,
+            "unavailable_entities": self.rule.unavailable_entities,
+            "enabled": self.rule.enabled,
+            "last_error": self.rule.last_error,
+        }
