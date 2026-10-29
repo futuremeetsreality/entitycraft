@@ -23,6 +23,7 @@ from .const import (
     CONF_RESET_DELAY,
     CONF_RESET_TARGET,
     CONF_SNAPSHOT_ENTITIES,
+    CONF_SUSPEND_WHEN,
     CONF_TRIGGER_ACTION,
     CONF_TRIGGER_TARGET,
     CONF_UNAVAILABLE_POLICY,
@@ -47,6 +48,9 @@ def _schema(defaults: dict | None = None) -> vol.Schema:
             ),
             vol.Required(CONF_UNAVAILABLE_POLICY, default=defaults.get(CONF_UNAVAILABLE_POLICY, UNAVAILABLE_HOLD)): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=[UNAVAILABLE_HOLD, UNAVAILABLE_ACTIVATE], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="unavailable_policy")
+            ),
+            vol.Optional(CONF_SUSPEND_WHEN, default=defaults.get(CONF_SUSPEND_WHEN, [])): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
             ),
             vol.Required(CONF_LOGIC, default=defaults.get(CONF_LOGIC, LOGIC_ANY)): selector.SelectSelector(
                 selector.SelectSelectorConfig(options=[LOGIC_ANY, LOGIC_ALL], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="logic")

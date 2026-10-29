@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Callable
+from contextlib import AsyncExitStack, asynccontextmanager
 from copy import deepcopy
 
 from homeassistant.config_entries import ConfigEntry
@@ -25,6 +26,7 @@ from .const import (
     CONF_RESET_DELAY,
     CONF_RESET_TARGET,
     CONF_SNAPSHOT_ENTITIES,
+    CONF_SUSPEND_WHEN,
     CONF_TRIGGER_ACTION,
     CONF_TRIGGER_TARGET,
     CONF_UNAVAILABLE_POLICY,
@@ -41,6 +43,10 @@ RESTORE_POLL_INTERVAL = 0.1
 RESTORE_STABLE_TIME = 0.3
 
 
+class RuleSuspended(Exception):
+    """A higher-priority indicator currently owns the output."""
+
+
 class EntityCraftRule:
     """Evaluate one portable rule bound to local HA entities."""
 
@@ -55,11 +61,20 @@ class EntityCraftRule:
         self.status = "ready"
         self.matched_entities: list[str] = []
         self.unavailable_entities: list[str] = []
+        self.suspended_by: list[str] = []
         self.last_error: str | None = None
         self._blocked_error: str | None = None
         self._toggle_pending = False
         self._restoring = False
         self._transition_lock = asyncio.Lock()
+        # Rules sharing explicit output entities serialize commands. Locks are
+        # ordered so partially overlapping output sets cannot deadlock.
+        output_ids = set(self._snapshot_entity_ids())
+        for key in (CONF_TRIGGER_TARGET, CONF_RESET_TARGET):
+            output_ids.update(self._target_entity_ids(self.config.get(key, {})))
+        locks = hass.data.setdefault(f"{DOMAIN}_output_locks", {})
+        self._output_locks = [locks.setdefault(entity_id, asyncio.Lock())
+                              for entity_id in sorted(output_ids)]
         self._stopped = False
         self._snapshot_taken = False
         self._saved_states: dict | None = None
@@ -85,7 +100,9 @@ class EntityCraftRule:
                 self.is_active = True
                 self._blocked_error = str(err)
         self._remove_listener = async_track_state_change_event(
-            self.hass, self.config[CONF_ENTITIES], self._handle_state_change
+            self.hass, list(dict.fromkeys(
+                self.config[CONF_ENTITIES] + self.config.get(CONF_SUSPEND_WHEN, [])
+            )), self._handle_state_change
         )
         await self.async_evaluate()
 
@@ -172,8 +189,35 @@ class EntityCraftRule:
 
     async def async_evaluate(self) -> None:
         # Every decision AND its awaited services share the same lock.
-        async with self._transition_lock:
+        async with self._locked_transition():
             await self._evaluate_locked()
+
+    @asynccontextmanager
+    async def _locked_transition(self):
+        async with self._transition_lock:
+            async with AsyncExitStack() as stack:
+                for lock in self._output_locks:
+                    await stack.enter_async_context(lock)
+                yield
+
+    def _is_suspended(self) -> bool:
+        """Only confirmed-off guards release a lower-priority rule."""
+        self.suspended_by = [
+            entity_id for entity_id in self.config.get(CONF_SUSPEND_WHEN, [])
+            if (state := self.hass.states.get(entity_id)) is None or state.state != "off"
+        ]
+        return bool(self.suspended_by)
+
+    def _show_suspended(self) -> None:
+        if self.is_active and self.config[CONF_TRIGGER_ACTION] != ACTION_TOGGLE:
+            # The higher-priority rule may restore a state reported before our
+            # previous command reached the device. Reassert an ongoing activity
+            # on resume, keeping its original; never replay a toggle.
+            self._activation_complete = False
+        self.status = "suspended"
+        self._cancel_delay()
+        self._cancel_retry()
+        self._notify()
 
     async def _evaluate_locked(self) -> None:
         if self._stopped:
@@ -196,6 +240,11 @@ class EntityCraftRule:
         while not self._stopped and self.enabled:
             config = self.config
             should_activate = self._condition_matches()
+            if self._is_suspended():
+                # Keep any original snapshot, but neither capture an alarm
+                # color nor restore over the higher-priority warning.
+                self._show_suspended()
+                return
             if self._restoring and should_activate:
                 # A failed/partial restoration might already have changed the
                 # lamp. Reassert the alarm, retaining the same original.
@@ -235,7 +284,7 @@ class EntityCraftRule:
     async def _delayed_transition(self, target: bool, delay: float) -> None:
         try:
             await asyncio.sleep(delay)
-            async with self._transition_lock:
+            async with self._locked_transition():
                 if self._delay_task is not asyncio.current_task():
                     return
                 # Detach the timer before sending any device commands. New
@@ -243,6 +292,9 @@ class EntityCraftRule:
                 self._delay_task = None
                 self._delay_target = None
                 if self._stopped or not self.enabled:
+                    return
+                if self._is_suspended():
+                    self._show_suspended()
                     return
                 if self._condition_matches() == target:
                     if not await self._try_apply_state(target):
@@ -254,6 +306,9 @@ class EntityCraftRule:
     async def _try_apply_state(self, active: bool) -> bool:
         try:
             await self._apply_state(active)
+        except RuleSuspended:
+            self._show_suspended()
+            return False
         except Exception as err:
             self.last_error = str(err)
             self.status = "error"
@@ -375,11 +430,11 @@ class EntityCraftRule:
         deadline = loop.time() + RESTORE_TIMEOUT
         matched_since: float | None = None
         while True:
-            # Reopening takes precedence; the original snapshot remains held.
             if self._stopped or not self.enabled:
                 raise InterruptedError("Restoration interrupted; original state remains saved")
-            if self._condition_matches():
-                return
+            # Even on reopening, wait for the restoration already sent to be
+            # reported before sending red again. Otherwise its late report can
+            # overwrite the new warning. _apply_state retains the original.
             now = loop.time()
             if self._snapshot_is_restored():
                 if matched_since is None:
@@ -394,6 +449,8 @@ class EntityCraftRule:
 
     async def _apply_state(self, active: bool) -> None:
         config = self.config
+        if self._is_suspended():
+            raise RuleSuspended
 
         if active:
             self.is_active = True
@@ -420,6 +477,8 @@ class EntityCraftRule:
                 await self._create_snapshot_scene()
             if self._stopped or not self.enabled:
                 raise InterruptedError("Activation interrupted before sending command")
+            if self._is_suspended():
+                raise RuleSuspended
             if config[CONF_TRIGGER_ACTION] == ACTION_TOGGLE:
                 self._toggle_pending = True
                 await self._save(True, self._saved_states)

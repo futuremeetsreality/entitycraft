@@ -3,6 +3,8 @@
 ## 0.1.4
 
 - Serialize alarm and restore actions so rapid sensor changes cannot overwrite the original state with the alarm state.
+- Serialize rules sharing explicit output entities and add optional suspension guards so lower-priority indicators do not overwrite a warning or snapshot its color.
+- Wait for an in-flight restoration's reported completion before reasserting a reopened alarm.
 - Persist recovery snapshots before activation; restore them after restart or scene reload.
 - Confirm reported light state, brightness and color before clearing the alarm; keep the original and retry on failure.
 - Preserve running delays when the aggregate condition stays unchanged; never cancel an in-flight action when a timer is canceled.

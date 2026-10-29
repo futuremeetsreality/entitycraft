@@ -14,6 +14,7 @@ CONF_RESET_DELAY = "reset_delay"
 CONF_RESET_TARGET = "reset_target"
 CONF_RESET_ACTION = "reset_action"
 CONF_UNAVAILABLE_POLICY = "unavailable_policy"
+CONF_SUSPEND_WHEN = "suspend_when"
 
 UNAVAILABLE_HOLD = "hold"
 UNAVAILABLE_ACTIVATE = "activate"

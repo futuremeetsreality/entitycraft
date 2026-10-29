@@ -17,11 +17,13 @@
           "reset_delay": "Reset delay",
           "reset_target": "Target on reset",
           "reset_action": "Action on reset",
-          "unavailable_policy": "When a monitored sensor is unavailable"
+          "unavailable_policy": "When a monitored sensor is unavailable",
+          "suspend_when": "Suspend while these sensors are on or unavailable"
         },
         "data_description": {
           "snapshot_entities": "Select the actual lights or other entities changed by the alarm scene.",
-          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights."
+          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights.",
+          "suspend_when": "For a lower-priority indicator, select all door sensors and the door rule Alarm entity. This rule resumes only when every guard is off, retaining its original snapshot. Leave empty on the warning rule; do not create mutual dependencies."
         }
       },
       "reconfigure": {
@@ -39,11 +41,13 @@
           "reset_delay": "Reset delay",
           "reset_target": "Target on reset",
           "reset_action": "Action on reset",
-          "unavailable_policy": "When a monitored sensor is unavailable"
+          "unavailable_policy": "When a monitored sensor is unavailable",
+          "suspend_when": "Suspend while these sensors are on or unavailable"
         },
         "data_description": {
           "snapshot_entities": "Select the actual lights or other entities changed by the alarm scene.",
-          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights."
+          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights.",
+          "suspend_when": "For a lower-priority indicator, select all door sensors and the door rule Alarm entity. This rule resumes only when every guard is off, retaining its original snapshot. Leave empty on the warning rule; do not create mutual dependencies."
         }
       }
     },
@@ -72,11 +76,13 @@
           "reset_delay": "Reset delay",
           "reset_target": "Target on reset",
           "reset_action": "Action on reset",
-          "unavailable_policy": "When a monitored sensor is unavailable"
+          "unavailable_policy": "When a monitored sensor is unavailable",
+          "suspend_when": "Suspend while these sensors are on or unavailable"
         },
         "data_description": {
           "snapshot_entities": "Select the actual lights or other entities changed by the alarm scene.",
-          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights."
+          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights.",
+          "suspend_when": "For a lower-priority indicator, select all door sensors and the door rule Alarm entity. This rule resumes only when every guard is off, retaining its original snapshot. Leave empty on the warning rule; do not create mutual dependencies."
         }
       }
     },

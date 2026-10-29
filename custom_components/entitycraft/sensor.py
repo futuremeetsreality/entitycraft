@@ -38,6 +38,7 @@ class EntityCraftStatusSensor(SensorEntity):
         return {
             "matched_entities": self.rule.matched_entities,
             "unavailable_entities": self.rule.unavailable_entities,
+            "suspended_by": self.rule.suspended_by,
             "enabled": self.rule.enabled,
             "last_error": self.rule.last_error,
         }

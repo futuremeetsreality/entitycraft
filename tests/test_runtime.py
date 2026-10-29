@@ -74,6 +74,7 @@ runtime = load_runtime()
 
 class FakeHass:
     def __init__(self):
+        self.data = {}
         self.states = {
             "binary_sensor.a": FakeState("off"),
             "binary_sensor.b": FakeState("off"),
@@ -123,7 +124,8 @@ class FakeHass:
             self.snapshots[scene] = snapshot
             self.states[scene] = FakeState("unknown")
         elif domain == "homeassistant":
-            self.states["light.test"] = FakeState("on", {"color_mode": "hs", "hs_color": [0, 100], "brightness": 255})
+            hue = 120 if target and target.get("entity_id") == "scene.secondary" else 0
+            self.states["light.test"] = FakeState("on", {"color_mode": "hs", "hs_color": [hue, 100], "brightness": 255})
         elif action in (("scene", "turn_on"), ("scene", "apply")):
             snapshot = data["entities"] if service == "apply" else self.snapshots[target["entity_id"]]
             self.report_entered.set()
@@ -342,6 +344,22 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assert_original()
         self.assertFalse(self.rule.is_active)
 
+    async def test_reopen_waits_for_late_restore_report_before_reasserting_alarm(self):
+        await self.change("on")
+        self.hass.report_delay = 0.001
+        self.hass.report_gate = asyncio.Event()
+        closing = asyncio.create_task(self.change("off"))
+        await asyncio.wait_for(self.hass.report_entered.wait(), 1)
+        opening = asyncio.create_task(self.change("on", "binary_sensor.b"))
+        await self.yield_tasks()
+        self.hass.report_gate.set()
+        await asyncio.gather(closing, opening)
+        await asyncio.gather(*self.hass.tasks)
+        self.assertTrue(self.rule.is_active)
+        self.assertEqual(self.hass.states["light.test"].attributes["hs_color"], [0, 100])
+        await self.change("off", "binary_sensor.b")
+        self.assert_original()
+
     async def test_reopen_after_partial_failed_restore_reasserts_alarm(self):
         await self.change("on")
         self.hass.silent_restore = True
@@ -502,6 +520,163 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
         await self.rule.async_start()
         self.assertEqual(self.rule.status, "disabled")
         self.assertEqual(self.hass.calls, [])
+
+
+class SharedLightTests(unittest.IsolatedAsyncioTestCase):
+    """A secondary indicator must defer to a door warning on the same bulb."""
+
+    change = RuntimeTests.change
+    yield_tasks = RuntimeTests.yield_tasks
+    assert_original = RuntimeTests.assert_original
+
+    async def asyncSetUp(self):
+        await RuntimeTests.asyncSetUp(self)
+        self.hass.states["binary_sensor.secondary"] = FakeState("off")
+        self.hass.states["binary_sensor.door_alarm"] = FakeState("off")
+        self.rule.async_add_listener(lambda: self.hass.set_sensor(
+            "binary_sensor.door_alarm", "on" if self.rule.is_active else "off"
+        ))
+        self.secondary_entry = SimpleNamespace(
+            entry_id="secondary", title="Secondary indicator", options={},
+            data={**self.entry.data, "entities": ["binary_sensor.secondary"],
+                  "trigger_target": {"entity_id": "scene.secondary"},
+                  "suspend_when": ["binary_sensor.a", "binary_sensor.b", "binary_sensor.door_alarm"]},
+        )
+        self.secondary = runtime.EntityCraftRule(self.hass, self.secondary_entry)
+        await self.secondary.async_start()
+
+    async def asyncTearDown(self):
+        self.hass.release.set()
+        await self.secondary.async_stop()
+        await RuntimeTests.asyncTearDown(self)
+
+    async def secondary_change(self, state):
+        self.hass.set_sensor("binary_sensor.secondary", state)
+        await self.secondary.async_evaluate()
+
+    def assert_red(self):
+        self.assertEqual(self.hass.states["light.test"].attributes["hs_color"], [0, 100])
+
+    async def test_secondary_start_during_alarm_does_not_capture_red(self):
+        await self.change("on")
+        await self.secondary_change("on")
+        self.assert_red()
+        self.assertFalse(self.secondary._snapshot_taken)
+        self.assertEqual(self.secondary.status, "suspended")
+        await self.change("off")
+        await self.secondary.async_evaluate()
+        await self.secondary_change("off")
+        self.assert_original()
+
+    async def test_secondary_end_during_alarm_defers_restore(self):
+        await self.secondary_change("on")
+        await self.change("on")
+        await self.secondary_change("off")
+        self.assert_red()
+        self.assertTrue(self.secondary.is_active)
+        await self.change("off")
+        await self.secondary.async_evaluate()
+        self.assert_original()
+
+    async def test_ongoing_secondary_is_reasserted_after_suspension(self):
+        await self.secondary_change("on")
+        await self.change("on")
+        await self.secondary.async_evaluate()
+        await self.change("off")
+        # Model a delayed activation report which was absent from the door's
+        # snapshot: resuming must reassert activity without replacing its base.
+        self.hass.states["light.test"] = FakeState("off")
+        await self.secondary.async_evaluate()
+        self.assertEqual(self.hass.states["light.test"].attributes["hs_color"], [120, 100])
+        await self.secondary_change("off")
+        self.assert_original()
+
+    async def test_pending_door_restore_still_blocks_secondary(self):
+        await self.change("on")
+        self.rule._config["reset_delay"] = 0.02
+        await self.change("off")
+        await self.secondary_change("on")
+        self.assert_red()
+        self.assertFalse(self.secondary._snapshot_taken)
+        await asyncio.wait_for(self.rule._delay_task, 1)
+        await self.secondary.async_evaluate()
+        await self.secondary_change("off")
+        self.assert_original()
+
+    async def test_missing_or_unknown_guard_blocks_new_commands(self):
+        for state in ("unknown", "unavailable", "on"):
+            self.hass.set_sensor("binary_sensor.door_alarm", state)
+            await self.secondary_change("on")
+            self.assertFalse(self.secondary._snapshot_taken)
+        self.hass.states.pop("binary_sensor.door_alarm")
+        await self.secondary.async_evaluate()
+        self.assertEqual(self.hass.calls, [])
+
+    async def test_guard_change_cancels_waiting_secondary_trigger(self):
+        self.secondary._config["delay"] = 0.01
+        await self.secondary_change("on")
+        timer = self.secondary._delay_task
+        self.hass.set_sensor("binary_sensor.a", "on")
+        await asyncio.wait_for(timer, 1)
+        self.assertEqual(self.secondary.status, "suspended")
+        self.assertFalse(self.secondary._snapshot_taken)
+        self.assertEqual(self.hass.calls, [])
+
+    async def test_guard_event_resumes_deferred_secondary_action(self):
+        await self.change("on")
+        await self.secondary_change("on")
+        await self.change("off")
+        # Model HA's state-change event after the door alarm reports off.
+        for ids, callback in list(self.hass.listeners):
+            if "binary_sensor.door_alarm" in ids:
+                callback(None)
+        await self.yield_tasks()
+        self.assertTrue(self.secondary.is_active)
+        self.assertEqual(self.hass.states["light.test"].attributes["hs_color"], [120, 100])
+        await self.secondary_change("off")
+        self.assert_original()
+
+    async def test_secondary_restarts_suspended_with_original_intact(self):
+        await self.secondary_change("on")
+        await self.change("on")
+        await self.secondary.async_stop()
+        self.secondary = runtime.EntityCraftRule(self.hass, self.secondary_entry)
+        await self.secondary.async_start()
+        self.assert_red()
+        await self.secondary_change("off")
+        await self.change("off")
+        await self.secondary.async_evaluate()
+        self.assert_original()
+
+    async def test_door_command_waits_for_inflight_secondary_command(self):
+        self.hass.block_action = ("homeassistant", "turn_on")
+        secondary = asyncio.create_task(self.secondary_change("on"))
+        await asyncio.wait_for(self.hass.entered.wait(), 1)
+        door = asyncio.create_task(self.change("on"))
+        await self.yield_tasks()
+        triggers = [c for c in self.hass.calls if c[0] == ("homeassistant", "turn_on")]
+        self.hass.release.set()
+        await asyncio.gather(secondary, door)
+        self.assertEqual(len(triggers), 1)
+        self.assert_red()
+        await self.change("off")
+        await self.secondary_change("off")
+        self.assert_original()
+
+    async def test_late_secondary_restore_finishes_before_door_warning(self):
+        await self.secondary_change("on")
+        self.hass.report_delay = 0.001
+        self.hass.report_gate = asyncio.Event()
+        secondary = asyncio.create_task(self.secondary_change("off"))
+        await asyncio.wait_for(self.hass.report_entered.wait(), 1)
+        door = asyncio.create_task(self.change("on"))
+        await self.yield_tasks()
+        self.hass.report_gate.set()
+        await asyncio.gather(secondary, door)
+        await asyncio.gather(*self.hass.tasks)
+        self.assert_red()
+        await self.change("off")
+        self.assert_original()
 
 
 if __name__ == "__main__":

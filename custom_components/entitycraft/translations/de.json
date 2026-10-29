@@ -17,11 +17,13 @@
           "reset_delay": "Rücksetzverzögerung",
           "reset_target": "Ziel bei Rücksetzung",
           "reset_action": "Aktion bei Rücksetzung",
-          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren"
+          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren",
+          "suspend_when": "Pausieren, solange diese Sensoren aktiv oder nicht verfügbar sind"
         },
         "data_description": {
           "snapshot_entities": "Wähle hier die Lampen oder Entitäten, deren Zustand vor einer Szene gespeichert und später wiederhergestellt werden soll.",
-          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen."
+          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen.",
+          "suspend_when": "Für eine nachrangige Anzeige alle Türsensoren und die Alarm-Entität der Türregel auswählen. Erst wenn alle aus sind, darf diese Regel wieder schalten. Gespeicherte Zustände bleiben erhalten. Bei der Türwarnung leer lassen; keine gegenseitigen Abhängigkeiten anlegen."
         }
       },
       "reconfigure": {
@@ -39,10 +41,12 @@
           "reset_delay": "Rücksetzverzögerung",
           "reset_target": "Ziel bei Rücksetzung",
           "reset_action": "Aktion bei Rücksetzung",
-          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren"
+          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren",
+          "suspend_when": "Pausieren, solange diese Sensoren aktiv oder nicht verfügbar sind"
         },
         "data_description": {
-          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen."
+          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen.",
+          "suspend_when": "Für eine nachrangige Anzeige alle Türsensoren und die Alarm-Entität der Türregel auswählen. Erst wenn alle aus sind, darf diese Regel wieder schalten. Gespeicherte Zustände bleiben erhalten. Bei der Türwarnung leer lassen; keine gegenseitigen Abhängigkeiten anlegen."
         }
       }
     },
@@ -72,11 +76,13 @@
           "reset_delay": "Rücksetzverzögerung",
           "reset_target": "Ziel bei Rücksetzung",
           "reset_action": "Aktion bei Rücksetzung",
-          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren"
+          "unavailable_policy": "Bei unbekannten oder nicht verfügbaren Sensoren",
+          "suspend_when": "Pausieren, solange diese Sensoren aktiv oder nicht verfügbar sind"
         },
         "data_description": {
           "snapshot_entities": "Bei einer Szene die tatsächlich veränderten Lampen auswählen.",
-          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen."
+          "unavailable_policy": "Beibehalten lässt einen bestehenden Alarm aktiv. Alarm auslösen aktiviert ihn auch bei unbekannten Sensoren und eignet sich für Warnlampen an Türen.",
+          "suspend_when": "Für eine nachrangige Anzeige alle Türsensoren und die Alarm-Entität der Türregel auswählen. Erst wenn alle aus sind, darf diese Regel wieder schalten. Gespeicherte Zustände bleiben erhalten. Bei der Türwarnung leer lassen; keine gegenseitigen Abhängigkeiten anlegen."
         }
       }
     },
