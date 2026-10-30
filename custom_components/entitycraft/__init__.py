@@ -2,6 +2,7 @@
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.storage import Store
 
 from .const import (
     ACTION_TURN_ON,
@@ -41,8 +42,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
     rule = EntityCraftRule(hass, entry)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = rule
-    await rule.async_start()
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    try:
+        await rule.async_start()
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except Exception:
+        await rule.async_stop()
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        raise
     return True
 
 
@@ -53,3 +59,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         rule: EntityCraftRule = hass.data[DOMAIN].pop(entry.entry_id)
         await rule.async_stop()
     return unloaded
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove this rule's recovery data only when the user deletes the rule."""
+    await Store(hass, 1, f"{DOMAIN}.{entry.entry_id}", atomic_writes=True).async_remove()

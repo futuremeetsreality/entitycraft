@@ -14,6 +14,7 @@ from .const import (
     ACTION_TOGGLE,
     ACTION_TURN_OFF,
     ACTION_TURN_ON,
+    BINDING_KEYS,
     CONF_ACTIVE_STATE,
     CONF_DELAY,
     CONF_ENTITIES,
@@ -22,11 +23,15 @@ from .const import (
     CONF_RESET_DELAY,
     CONF_RESET_TARGET,
     CONF_SNAPSHOT_ENTITIES,
+    CONF_SUSPEND_WHEN,
     CONF_TRIGGER_ACTION,
     CONF_TRIGGER_TARGET,
+    CONF_UNAVAILABLE_POLICY,
     DOMAIN,
     LOGIC_ALL,
     LOGIC_ANY,
+    UNAVAILABLE_ACTIVATE,
+    UNAVAILABLE_HOLD,
 )
 
 
@@ -39,6 +44,12 @@ def _schema(defaults: dict | None = None) -> vol.Schema:
         {
             vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "")): str,
             vol.Required(CONF_ENTITIES, default=defaults.get(CONF_ENTITIES, [])): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+            ),
+            vol.Required(CONF_UNAVAILABLE_POLICY, default=defaults.get(CONF_UNAVAILABLE_POLICY, UNAVAILABLE_HOLD)): selector.SelectSelector(
+                selector.SelectSelectorConfig(options=[UNAVAILABLE_HOLD, UNAVAILABLE_ACTIVATE], mode=selector.SelectSelectorMode.DROPDOWN, translation_key="unavailable_policy")
+            ),
+            vol.Optional(CONF_SUSPEND_WHEN, default=defaults.get(CONF_SUSPEND_WHEN, [])): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
             ),
             vol.Required(CONF_LOGIC, default=defaults.get(CONF_LOGIC, LOGIC_ANY)): selector.SelectSelector(
@@ -75,31 +86,59 @@ class EntityCraftConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
-        return EntityCraftOptionsFlow(config_entry)
+        return EntityCraftOptionsFlow()
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
-        if user_input is not None:
+        errors = _validate(user_input)
+        if user_input is not None and not errors:
             return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
-        return self.async_show_form(step_id="user", data_schema=_schema())
+        return self.async_show_form(step_id="user", data_schema=_schema(user_input), errors=errors)
 
     async def async_step_reconfigure(self, user_input: dict | None = None) -> FlowResult:
         entry = self._get_reconfigure_entry()
-        if user_input is not None:
-            self.hass.config_entries.async_update_entry(entry, title=user_input[CONF_NAME], data=user_input)
-            await self.hass.config_entries.async_reload(entry.entry_id)
+        errors = _validate(user_input)
+        errors.update(_validate_change(self.hass, entry, user_input))
+        if user_input is not None and not errors:
+            self.hass.config_entries.async_update_entry(entry, title=user_input[CONF_NAME], data=user_input, options={})
+            # The registered update listener performs the one required reload.
             return self.async_abort(reason="reconfigure_successful")
         defaults = {**entry.data, **entry.options, CONF_NAME: entry.title}
-        return self.async_show_form(step_id="reconfigure", data_schema=_schema(defaults))
+        return self.async_show_form(step_id="reconfigure", data_schema=_schema(user_input or defaults), errors=errors)
 
 
 class EntityCraftOptionsFlow(config_entries.OptionsFlow):
     """Edit an EntityCraft rule through the Configure button."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
-        if user_input is not None:
+        errors = _validate(user_input)
+        errors.update(_validate_change(self.hass, self.config_entry, user_input))
+        if user_input is not None and not errors:
             return self.async_create_entry(title="", data=user_input)
         defaults = {**self.config_entry.data, **self.config_entry.options, CONF_NAME: self.config_entry.title}
-        return self.async_show_form(step_id="init", data_schema=_schema(defaults))
+        return self.async_show_form(step_id="init", data_schema=_schema(user_input or defaults), errors=errors)
+
+
+def _validate(user_input: dict | None) -> dict[str, str]:
+    if user_input is None:
+        return {}
+    if not user_input.get(CONF_ENTITIES):
+        return {CONF_ENTITIES: "no_sensors"}
+    if user_input.get(CONF_RESET_ACTION) == ACTION_RESTORE_PREVIOUS:
+        explicit = user_input.get(CONF_SNAPSHOT_ENTITIES)
+        ids = explicit or user_input.get(CONF_TRIGGER_TARGET, {}).get("entity_id", [])
+        if isinstance(ids, str):
+            ids = [ids]
+        if (not ids or all(entity_id.startswith("scene.") for entity_id in ids)
+                or (explicit and any(entity_id.startswith("scene.") for entity_id in ids))):
+            return {CONF_SNAPSHOT_ENTITIES: "no_snapshot_entities"}
+    return {}
+
+
+def _validate_change(hass, entry, user_input: dict | None) -> dict[str, str]:
+    if user_input is None:
+        return {}
+    rule = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if rule is not None and rule.is_active:
+        if any(user_input.get(key) != rule.config.get(key) for key in BINDING_KEYS):
+            return {"base": "alarm_active"}
+    return {}

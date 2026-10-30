@@ -4,15 +4,92 @@
     "step": {
       "user": {
         "title": "Create EntityCraft rule",
-        "description": "Create a binary sensor rule with configurable Home Assistant targets and actions."
+        "description": "Monitor binary sensors and configure trigger and reset actions.",
+        "data": {
+          "name": "Rule name",
+          "entities": "Monitored sensors",
+          "logic": "Logic",
+          "active_state": "Trigger state",
+          "delay": "Trigger delay",
+          "trigger_target": "Target on activation",
+          "trigger_action": "Action on activation",
+          "snapshot_entities": "Save previous state of",
+          "reset_delay": "Reset delay",
+          "reset_target": "Target on reset",
+          "reset_action": "Action on reset",
+          "unavailable_policy": "When a monitored sensor is unavailable",
+          "suspend_when": "Suspend while these sensors are on or unavailable"
+        },
+        "data_description": {
+          "snapshot_entities": "Select the actual lights or other entities changed by the alarm scene.",
+          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights.",
+          "suspend_when": "For a lower-priority indicator, select all door sensors and the door rule Alarm entity. This rule resumes only when every guard is off, retaining its original snapshot. Leave empty on the warning rule; do not create mutual dependencies."
+        }
       },
       "reconfigure": {
         "title": "Edit EntityCraft rule",
-        "description": "Change sensors, logic, delays, targets and actions."
+        "description": "Change sensors, delays and actions. Bindings can be changed after an active alarm has finished.",
+        "data": {
+          "name": "Rule name",
+          "entities": "Monitored sensors",
+          "logic": "Logic",
+          "active_state": "Trigger state",
+          "delay": "Trigger delay",
+          "trigger_target": "Target on activation",
+          "trigger_action": "Action on activation",
+          "snapshot_entities": "Save previous state of",
+          "reset_delay": "Reset delay",
+          "reset_target": "Target on reset",
+          "reset_action": "Action on reset",
+          "unavailable_policy": "When a monitored sensor is unavailable",
+          "suspend_when": "Suspend while these sensors are on or unavailable"
+        },
+        "data_description": {
+          "snapshot_entities": "Select the actual lights or other entities changed by the alarm scene.",
+          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights.",
+          "suspend_when": "For a lower-priority indicator, select all door sensors and the door rule Alarm entity. This rule resumes only when every guard is off, retaining its original snapshot. Leave empty on the warning rule; do not create mutual dependencies."
+        }
       }
+    },
+    "error": {
+      "no_sensors": "Select at least one monitored sensor.",
+      "no_snapshot_entities": "Select the actual entities whose state should be restored, not a scene.",
+      "alarm_active": "Wait for the active alarm to finish before changing sensors, targets or actions."
     },
     "abort": {
       "reconfigure_successful": "The rule was updated successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure EntityCraft rule",
+        "data": {
+          "name": "Rule name",
+          "entities": "Monitored sensors",
+          "logic": "Logic",
+          "active_state": "Trigger state",
+          "delay": "Trigger delay",
+          "trigger_target": "Target on activation",
+          "trigger_action": "Action on activation",
+          "snapshot_entities": "Save previous state of",
+          "reset_delay": "Reset delay",
+          "reset_target": "Target on reset",
+          "reset_action": "Action on reset",
+          "unavailable_policy": "When a monitored sensor is unavailable",
+          "suspend_when": "Suspend while these sensors are on or unavailable"
+        },
+        "data_description": {
+          "snapshot_entities": "Select the actual lights or other entities changed by the alarm scene.",
+          "unavailable_policy": "Hold keeps an existing alarm active without starting unrelated actions. Activate also triggers the alarm when an input is unknown or unavailable; use this for door-warning lights.",
+          "suspend_when": "For a lower-priority indicator, select all door sensors and the door rule Alarm entity. This rule resumes only when every guard is off, retaining its original snapshot. Leave empty on the warning rule; do not create mutual dependencies."
+        }
+      }
+    },
+    "error": {
+      "no_sensors": "Select at least one monitored sensor.",
+      "no_snapshot_entities": "Select the actual entities whose state should be restored, not a scene.",
+      "alarm_active": "Wait for the active alarm to finish before changing sensors, targets or actions."
     }
   },
   "selector": {
@@ -32,7 +109,14 @@
       "options": {
         "turn_on": "Turn on / activate",
         "turn_off": "Turn off",
-        "toggle": "Toggle"
+        "toggle": "Toggle",
+        "restore_previous": "Restore previous state"
+      }
+    },
+    "unavailable_policy": {
+      "options": {
+        "hold": "Hold last alarm state",
+        "activate": "Activate alarm (fail-safe)"
       }
     }
   }

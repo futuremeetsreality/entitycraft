@@ -1,11 +1,13 @@
 {
   "domain": "entitycraft",
   "name": "EntityCraft",
-  "codeowners": ["@futuremeetsreality"],
+  "codeowners": [
+    "@futuremeetsreality"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/futuremeetsreality/entitycraft",
   "integration_type": "service",
   "iot_class": "local_push",
   "requirements": [],
-  "version": "0.1.3"
+  "version": "0.1.4"
 }

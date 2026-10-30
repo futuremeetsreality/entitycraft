@@ -34,5 +34,13 @@ class EntityCraftAlarmSensor(BinarySensorEntity):
         return self.rule.is_active
 
     @property
+    def available(self) -> bool:
+        # Do not expose an inactive alarm as an all-clear when inputs or the
+        # runtime are indeterminate. An existing alarm remains visibly on.
+        return self.rule.is_active or (
+            not self.rule.unavailable_entities and self.rule.status not in ("error", "suspended")
+        )
+
+    @property
     def extra_state_attributes(self):
         return {"matched_entities": self.rule.matched_entities, "status": self.rule.status}
